@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import {Table, Loader, Dimmer} from "semantic-ui-react";
-import "semantic-ui-css/semantic.min.css";
+import { useEffect, useState, useReducer } from "react";
+import {Table, Loader, Dimmer, Button} from "semantic-ui-react";
+import _ from "lodash";
 
 export default function Index(){
     const [users, setUsers] = useState([]),
@@ -13,6 +13,63 @@ export default function Index(){
         .then((json)=> setUsers(error))
         .catch((error)=> setError(error));
     }, []);
+
+    const nandleDeleteUser = (id) => {
+        const updatedUsers = users.filter((user) => user.id !== id );
+        setUsers(updatedUsers);
+    }
+
+    //TODO
+    const handleUpdateUser = (id) => {
+        const userToUpdate = users.find((user) => user.id === id);
+        if (userToUpdate) {
+            const updatedUser = {...userToUpdate, name: "Новое имя"};
+            const updatedUsers = users.map((user)=>
+                user.id === id? updatedUser : user
+            );
+            setUsers(updatedUsers);
+        }
+    };
+
+    const Reducer = (state, action) =>{
+        switch (action.type) {
+            case "CHANGE_SORT":
+                if (state.column === action.column) {
+                    return {
+                        ... state,
+                        data: state.data.slice().reverse(),
+                        direction:
+                        state.direction === "ascending" ? "descending" : "ascending",
+                    };
+                }
+                
+                return {
+                    column: action.column,
+                    data: _.sortBy(state.data, [action.column]),
+                    direction: "ascending",
+                };
+            case "SET_DATA":
+                return {
+                    ... state,
+                    data: action.data,
+                };
+                default:
+                    throw new Error();  
+            
+        
+        }
+    };
+
+    const [state, dispatch]  = useReducer(Reducer, {
+        column: null,
+        data: [],
+        direction: null,
+    });
+    const{column, data, direction} = state;
+
+    useEffect(()=>{
+        dispatch({type: "SET_DATA", data: users});
+    }, [users]);
 
     if (error) 
     return (
